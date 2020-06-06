@@ -1,81 +1,32 @@
-ARG SPARK_BASE=cyliu0204/spark:2.4.5_2.11-hadoop_3.1.0-horovod_1.8_cloud
-ARG LIVY_BUILDER=sasnouskikh/livy-builder:0.2
+ARG BASE_CONTAINER=horovod/horovod:0.18.0-tf1.14.0-torch1.2.0-mxnet1.5.0-py3.6
 
-### Livy Builder Container
-FROM $LIVY_BUILDER as build
+FROM $BASE_CONTAINER
 
-ARG LIVY_GITHUB_REPO=jahstreet/incubator-livy
-ARG LIVY_GITHUB_BRANCH=v0.6.0-incubating-kubernetes-support
-
-RUN git clone -b ${LIVY_GITHUB_BRANCH} https://github.com/${LIVY_GITHUB_REPO}.git && \
-    cd incubator-livy && \
-    mvn clean package -DskipTests=true && \
-    cp assembly/target/apache-livy-0.7.0-incubating-SNAPSHOT-bin.zip /
-
-### Final Container
-FROM $SPARK_BASE
-
-ARG LIVY_VERSION_ARG=0.7.0-incubating-SNAPSHOT
+ARG SPARK_VERSION_ARG=2.4.3
 
 LABEL maintainer="Aliaksandr Sasnouskikh <jaahstreetlove@gmail.com>"
 
-ENV BASE_IMAGE              $SPARK_BASE#$BASE_IMAGE
+ENV BASE_IMAGE      $BASE_CONTAINER
 
-ENV LIVY_VERSION            $LIVY_VERSION_ARG
-ENV LIVY_HOME               /opt/livy
-ENV LIVY_CONF_DIR           $LIVY_HOME/conf
+ENV SPARK_VERSION   $SPARK_VERSION_ARG
+ENV HADOOP_VERSION  without-hadoop
 
-ENV PATH                    $PATH:$LIVY_HOME/bin
+ENV SPARK_HOME      /opt/spark
+ENV SPARK_CONF_DIR  $SPARK_HOME/conf
 
-# install livy
-COPY --from=build /apache-livy-${LIVY_VERSION}-bin.zip /apache-livy-${LIVY_VERSION}-bin.zip
-RUN unzip /apache-livy-${LIVY_VERSION}-bin.zip -d / && \
-    mv /apache-livy-${LIVY_VERSION}-bin /opt/ && \
-    rm -rf $LIVY_HOME && \
-    ln -s /opt/apache-livy-${LIVY_VERSION}-bin $LIVY_HOME && \
-    rm -f /apache-livy-${LIVY_VERSION}-bin.zip
+ENV SPARK_CLASSPATH $SPARK_HOME/cluster-conf
 
-#RUN ls $SPARK_HOME/jars
+ENV PYTHONHASHSEED  0
+ENV CONDA_DIR       /opt/conda
+ENV SHELL           /bin/bash
+ENV LC_ALL          en_US.UTF-8
+ENV LANG            en_US.UTF-8
+ENV LANGUAGE        en_US.UTF-8
 
-#RUN rm $SPARK_HOME/jars/kubernetes-client-4.1.2.jar
+ENV PATH            $PATH:$SPARK_HOME/bin:$CONDA_DIR/bin
 
-#ADD https://repo1.maven.org/maven2/io/fabric8/kubernetes-client/4.4.2/kubernetes-client-4.4.2.jar $SPARK_HOME/jars
-
-RUN wget -O $SPARK_HOME/jars/aws-java-sdk-1.11.777.jar https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk/1.11.777/aws-java-sdk-1.11.777.jar && \
-wget -O $SPARK_HOME/jars/hadoop-aws-3.1.0.jar  https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/3.2.0/hadoop-aws-3.2.0.jar && \
-wget -O $SPARK_HOME/jars/delta-core_2.11-0.6.0.jar https://repo1.maven.org/maven2/io/delta/delta-core_2.11/0.6.0/delta-core_2.11-0.6.0.jar
-
-COPY client.jar  $SPARK_HOME/jars/
-
-#ENV LIVY_SPARK_JAVA_OPT_LOGINNAME -Dalluxio.security.login.username=alluxio
-#RUN conda  install -y -q horovod
-#ENV LIVY_SPARK_JAVA_OPT_TEST -Dalluxio.security.login.username=hdfs -Dalluxio.security.login.impersonation.username=NONE -Dalluxio.security.underfs.hdfs.impersonation.enabled=false
-
-COPY core-site.xml $SPARK_HOME/conf/
-
-COPY Dockerfile /my_docker/
-
-RUN set -ex && \
-    apt-get update && \
-    ln -s /lib /lib64 && \
-    apt install -y bash libc6 libpam-modules libnss3 wget bzip2 && \
-    rm /bin/sh && \
-    ln -sv /bin/bash /bin/sh && \
-    echo "auth required pam_wheel.so use_uid" >> /etc/pam.d/su && \
-    chgrp root /etc/passwd && chmod ug+rw /etc/passwd && \
-    rm -rf /var/cache/apt/*
-
-
-ENV TINI_VERSION v0.19.0
-ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /usr/bin/tini
-RUN chmod +x /usr/bin/tini
-
-#RUN conda install -y  pytorch  torchvision -c pytorch
-#RUN conda install -y tensorflow-gpu=1.13* tensorboard keras=2.2*
-
-#RUN sudo apt-get install build-essential gcc
-
-#RUN pip install horovod
+ARG MINICONDA_VERSION=4.6.14
+ARG CONDA_VERSION=4.6.14
 
 
 RUN set -eux; \
@@ -183,11 +134,48 @@ RUN set -eux; \
 	javac -version; \
 	java -version
 
-RUN pip install horovod[spark]
+#RUN set -ex && \
+#    apt-get update && \
+#    apt-get install tini libstdc++ glib linux-pam krb5 krb5-libs nss openssl libressl-dev wget sed curl \
+#                                bzip2 unzip libxext libxrender procps coreutils ca-certificates && \
+#    rm /bin/sh && \
+#    ln -sv /bin/bash /bin/sh && \
+#    echo "auth required pam_wheel.so use_uid" >> /etc/pam.d/su && \
+#    chgrp root /etc/passwd && chmod ug+rw /etc/passwd
 
-#  4040 - Spark UI port
-#  7078 - Driver RPC port
-#  7079 - Blockmanager port
-#  8088 - JMX Exporter for Prometheus
-# 10000 - Livy RPC Server for Jupyter integration
-EXPOSE 4040 7078 7079 8088 10000
+# install spark
+RUN wget -O /spark-${SPARK_VERSION}-bin-without-hadoop.tgz https://archive.apache.org/dist/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-without-hadoop.tgz && \
+    tar -xzf /spark-${SPARK_VERSION}-bin-without-hadoop.tgz -C /opt/ && \
+    ln -s /opt/spark-${SPARK_VERSION}-bin-without-hadoop $SPARK_HOME && \
+    rm -f /spark-${SPARK_VERSION}-bin-without-hadoop.tgz && \
+    mkdir -p $SPARK_HOME/work-dir && \
+    mkdir -p $SPARK_HOME/spark-warehouse && \
+    mkdir -p $SPARK_HOME/cluster-conf
+
+# install Conda (https://github.com/frol/docker-alpine-miniconda3/blob/master/Dockerfile)
+RUN mkdir -p $CONDA_DIR && \
+    cd /tmp && \
+    wget -O /tmp/Miniconda3-${MINICONDA_VERSION}-Linux-x86_64.sh  https://repo.continuum.io/miniconda/Miniconda3-${MINICONDA_VERSION}-Linux-x86_64.sh && \
+    /bin/bash /tmp/Miniconda3-${MINICONDA_VERSION}-Linux-x86_64.sh -f -b -p $CONDA_DIR && \
+    rm /tmp/Miniconda3-${MINICONDA_VERSION}-Linux-x86_64.sh && \
+    $CONDA_DIR/bin/conda config --system --prepend channels conda-forge && \
+    $CONDA_DIR/bin/conda config --system --set auto_update_conda false && \
+    $CONDA_DIR/bin/conda config --system --set show_channel_urls true && \
+    $CONDA_DIR/bin/conda install --quiet --yes conda="${CONDA_VERSION%.*}.*" && \
+    $CONDA_DIR/bin/conda update --all --quiet --yes && \
+    conda clean -tipsy
+
+# Install python packages
+RUN conda install numpy scipy pandas scikit-learn
+RUN conda install -c conda-forge pyarrow --yes
+RUN conda clean -a -y
+
+COPY conf/* $SPARK_CONF_DIR/
+# $SPARK_HOME/conf gets cleaned by Spark on Kubernetes internals, create and add to classpath another directory for logging and other configs
+COPY conf/log4j.properties $SPARK_HOME/cluster-conf/
+COPY entrypoint.sh /opt/
+COPY Dockerfile /my_docker/
+
+WORKDIR $SPARK_HOME/work-dir
+
+ENTRYPOINT [ "/opt/entrypoint.sh" ]

@@ -1,4 +1,5 @@
-ARG SPARK_BASE=cyliu0204/spark:2.4.5_2.11-hadoop_3.1.0-horovod_1.8_cloud
+#ARG SPARK_BASE=cyliu0204/spark:2.4.5_2.11-hadoop_3.1.0-horovod_1.8_cloud
+ARG SPARK_BASE=cyliu0204/spark:2.4.5_2.11-hadoop_3.1.0-horovod_0.19.1_cloud_cpu
 ARG LIVY_BUILDER=sasnouskikh/livy-builder:0.2
 
 ### Livy Builder Container
@@ -83,8 +84,11 @@ RUN set -eux; \
 	apt-get install -y --no-install-recommends \
 		bzip2 \
 		unzip \
+                gpg \
 		xz-utils \
-		\
+                dirmngr \
+		gpg-agent \
+
 # utilities for keeping Debian and OpenJDK CA certificates in sync
 		ca-certificates p11-kit \
 		\
@@ -119,6 +123,9 @@ ENV JAVA_URL_VERSION 8u252b09
 # > ...
 # > While it is true that the OpenJDK Governing Board has not sanctioned those releases, they (or rather we, since I am a member) didn't sanction Oracle's OpenJDK releases either. As far as I am aware, the lead of an OpenJDK project is entitled to release binary builds, and there is clearly a need for them.
 # >
+
+RUN mkdir ~/.gnupg
+RUN echo "disable-ipv6" >> ~/.gnupg/dirmngr.conf
 
 RUN set -eux; \
 	\
@@ -184,6 +191,8 @@ RUN set -eux; \
 	java -version
 
 RUN pip install horovod[spark]
+
+RUN conda install -y pyarrow=0.16.0
 
 #  4040 - Spark UI port
 #  7078 - Driver RPC port

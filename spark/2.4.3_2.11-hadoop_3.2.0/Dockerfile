@@ -1,8 +1,8 @@
-ARG SPARK_BASE=sasnouskikh/spark-base:2.4.3_2.11-without-hadoop
+ARG SPARK_BASE=cyliu0204/spark-base:2.4.3_2.11-without-hadoop-horovod
 
 FROM $SPARK_BASE
 
-ARG HADOOP_VERSION_ARG=3.2.0
+ARG HADOOP_VERSION_ARG=3.2.1
 
 LABEL maintainer="Aliaksandr Sasnouskikh <jaahstreetlove@gmail.com>"
 
@@ -85,7 +85,7 @@ RUN wget -q -O $SPARK_HOME/jars/jmx_prometheus_javaagent-0.11.0.jar http://centr
     wget -q -O $SPARK_HOME/jars/simpleclient_pushgateway-0.6.0.jar http://central.maven.org/maven2/io/prometheus/simpleclient_pushgateway/0.6.0/simpleclient_pushgateway-0.6.0.jar && \
     wget -q -O $SPARK_HOME/jars/collector-0.11.0.jar http://central.maven.org/maven2/io/prometheus/jmx/collector/0.11.0/collector-0.11.0.jar
 
-RUN pip install --no-cache-dir azure-datalake-store
+# RUN pip install --no-cache-dir azure-datalake-store
 
 COPY Dockerfile /my_docker/
 
