@@ -6,9 +6,10 @@ ARG LIVY_BUILDER=sasnouskikh/livy-builder:0.2
 FROM $LIVY_BUILDER as build
 
 ARG LIVY_GITHUB_REPO=cyliu0204/incubator-livy
-ARG LIVY_GITHUB_BRANCH=master
 
-RUN echo "test1"
+ARG LIVY_GITHUB_BRANCH=spark3.0-kubernetes
+
+RUN echo "test2"
 RUN git clone -b ${LIVY_GITHUB_BRANCH} https://github.com/${LIVY_GITHUB_REPO}.git && \
     cd incubator-livy && \
     mvn clean package -DskipTests -Pthriftserver -Pspark-3.0 
@@ -45,9 +46,8 @@ RUN ls $LIVY_CONF_DIR/
 #RUN rm $SPARK_HOME/jars/kubernetes-client-4.1.2.jar
 
 #ADD https://repo1.maven.org/maven2/io/fabric8/kubernetes-client/4.4.2/kubernetes-client-4.4.2.jar $SPARK_HOME/jars
-
-RUN wget -O $SPARK_HOME/jars/aws-java-sdk-1.11.777.jar https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk/1.11.777/aws-java-sdk-1.11.777.jar && \
-wget -O $SPARK_HOME/jars/hadoop-aws-3.1.0.jar  https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/3.2.0/hadoop-aws-3.2.0.jar 
+RUN wget -O $SPARK_HOME/jars/aws-java-sdk-1.11.271.jar https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-bundle/1.11.271/aws-java-sdk-bundle-1.11.271.jar  && \
+wget -O $SPARK_HOME/jars/hadoop-aws-3.1.3.jar  https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/3.1.3/hadoop-aws-3.1.3.jar 
 
 #RUN git clone  https://github.com/delta-io/delta.git && \
 #    cd delta && \
@@ -56,8 +56,9 @@ wget -O $SPARK_HOME/jars/hadoop-aws-3.1.0.jar  https://repo1.maven.org/maven2/or
 
 COPY delta-core_2.12-0.6.1-SNAPSHOT.jar $SPARK_HOME/jars/
 
+RUN rm -rf $SPARK_HOME/jars/guava-14.0.1.jar
 
-COPY client.jar  $SPARK_HOME/jars/
+COPY alluxio-2.2.0-client.jar  $SPARK_HOME/jars/
 
 #ENV LIVY_SPARK_JAVA_OPT_LOGINNAME -Dalluxio.security.login.username=alluxio
 #RUN conda  install -y -q horovod
@@ -128,6 +129,7 @@ RUN pip install -U keras==2.2.5
 ENV HADOOP_HOME=/opt/hadoop-3.1.3/
 
 ADD hadoop-3.1.3.tar.gz /opt/
+RUN cp -rf /opt/hadoop-3.1.3/share/hadoop/common/lib/guava-27.0-jre.jar $SPARK_HOME/jars/
 
 RUN cp -rf $HADOOP_HOME/lib/native/* $HADOOP_HOME/ 
 RUN ls $LIVY_CONF_DIR/
