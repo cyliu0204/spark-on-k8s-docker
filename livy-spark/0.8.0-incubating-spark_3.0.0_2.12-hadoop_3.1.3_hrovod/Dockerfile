@@ -1,5 +1,5 @@
 #ARG SPARK_BASE=cyliu0204/spark:2.4.5_2.11-hadoop_3.1.0-horovod_1.8_cloud
-ARG SPARK_BASE=cyliu0204/spark:3.0.0_2.12-hadoop_3.1.3-horovod_1.9.2_tf1.4.0_cloud
+ARG SPARK_BASE=cyliu0204/spark:3.0.0_2.12-hadoop_3.1.3-horovod_0.19.4-tf1.15.0_cloud_gpu
 ARG LIVY_BUILDER=sasnouskikh/livy-builder:0.2
 
 ### Livy Builder Container
@@ -122,7 +122,7 @@ ENV PATH="$JAVA_HOME/bin:$PATH"
 #RUN conda install -y pyarrow=0.16.0
 #RUN pip install -U pyarrow==0.16.0
 
-RUN pip install horovod[spark]
+#RUN pip install horovod[spark]
 RUN pip install -U keras==2.2.5
 
 

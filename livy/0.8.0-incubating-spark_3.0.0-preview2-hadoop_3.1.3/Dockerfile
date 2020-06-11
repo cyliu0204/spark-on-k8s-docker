@@ -1,4 +1,4 @@
-ARG SPARK_BASE=cyliu0204/livy-spark:0.8.0-incubating-spark_3.0.0_2.12-hadoop_3.1.3_hrovod_0.19.2_gpu-delta_0.6.1
+ARG SPARK_BASE=cyliu0204/livy-spark:0.8.0-incubating-spark_3.0.0_2.12-hadoop_3.1.3_hrovod_0.19.4_gpu-delta_0.6.1
 
 FROM $SPARK_BASE
 

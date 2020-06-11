@@ -13,12 +13,12 @@ RUN cd / && \
     cp spark-3.0.0-bin-hadoop-3.1.3-cloud-scala-2.12.tgz /
 
 ### Final Container
-FROM cyliu0204/horovod:0.19.3-tf1.14.0-torch1.4.0-mxnet1.6.0-py3.6_gpu
+FROM cyliu0204/horovod:0.19.4-tf1.15.0-torch1.4.0-mxnet1.6.0-py3.6
 #FROM openjdk:8-jdk-slim
 #FROM $BASE_IMAGE
 LABEL maintainer="Aliaksandr Sasnouskikh <jaahstreetlove@gmail.com>"
 
-ENV BASE_IMAGE cyliu0204/horovod:0.19.3-tf1.14.0-torch1.4.0-mxnet1.6.0-py3.6_gpu
+ENV BASE_IMAGE cyliu0204/horovod:0.19.4-tf1.15.0-torch1.4.0-mxnet1.6.0-py3.6
 
 
 ENV SPARK_VERSION   3.0.0
